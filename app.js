@@ -6,6 +6,7 @@ const bodyParser = require('body-parser')
 const LocalStrategy = require('passport-local')
 const passportLocalMongoose = require('passport-local-mongoose')
 const User = require('./models/user')
+const bcrypt = require('bcrypt')
 
 const DB =
   'mongodb+srv://auth1:gEYtTSCqghwmNL16@cluster0.vjh35.mongodb.net/auth_demo_app?retryWrites=true&w=majority'
@@ -90,12 +91,30 @@ app.post(
   }
 )
 
+app.post('/update', async (req, res) => {
+  const newName = req.body.username
+  const newPassword = req.body.password
+  const name = req.user.username
+  const user1 = await User.findOneAndUpdate(
+    { username: name },
+    { username: newName }
+  )
+  User.findOne({ username: name }).then((u) => {
+    u.setPassword(newPassword, (err, u) => {
+      if (err) return console.log(err)
+      u.save()
+      res.status(200).json({ message: 'password change successful' })
+    })
+  })
+  res.redirect('logout')
+})
+
 app.get('/logout', function (req, res, next) {
   req.logout(function (err) {
     if (err) {
       return next(err)
     }
-    res.redirect('/')
+    res.redirect('/login')
   })
 })
 
